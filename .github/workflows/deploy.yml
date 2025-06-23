@@ -8,7 +8,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
-
     strategy:
       matrix:
         node-version: [20.x]
@@ -21,35 +20,36 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-      - name: Show workspace path (debugging)
+      - name: Install & Build in Workspace
         run: |
-          echo "GitHub workspace is: ${{ github.workspace }}"
-          ls -la ${{ github.workspace }}
+          npm ci
+          npm run build
+        working-directory: ${{ github.workspace }}
 
-      - name: Sync code to custom directory
-        run: |
-          rm -rf /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
-
-          cp -r ${{ github.workspace }} /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
-
-      - name: Install dependencies
-        run: npm install
-        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
-
-      - name: Build the project
-        run: npm run build
-        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
-
-      - name: Install PM2 globally
-        run: npm install -g pm2
-
-      - name: Delete existing PM2 process
+      - name: Stop existing PM2 process
         run: pm2 delete nestjs-app || true
 
-      - name: Start PM2 with new build
-        run: pm2 start dist/main.js --name nestjs-app
+      - name: Sync production artifacts with rsync
+        run: |
+          # Create target directory if missing
+          mkdir -p /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
+          
+          # Sync only essential files
+          rsync -av --delete \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.github' \
+            ${{ github.workspace }/ \
+            /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
+
+      - name: Install production dependencies
+        run: npm ci --production
         working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
 
-      - name: Save PM2 process list
-        run: pm2 save
+      - name: Start PM2 process
+        run: |
+          pm2 start dist/main.js --name nestjs-app
+          pm2 save
+        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project/

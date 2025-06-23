@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: self-hosted
 
     strategy:
@@ -14,28 +14,41 @@ jobs:
         node-version: [20.x]
 
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Show workspace path (debugging)
+        run: |
+          echo "GitHub workspace is: ${{ github.workspace }}"
+          ls -la ${{ github.workspace }}
+
+      - name: Sync code to custom directory
+        run: |
+          rm -rf /home/administrator/nest-cicd-implementation/ci-cd-implementation
+          cp -r ${{ github.workspace }} /home/administrator/nest-cicd-implementation/ci-cd-implementation
+
       - name: Install dependencies
         run: npm install
+        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
 
       - name: Build the project
         run: npm run build
+        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
 
       - name: Install PM2 globally
         run: npm install -g pm2
 
-      - name: Stop current PM2 process by name
-        run: pm2 stop nestjs-app || true
+      - name: Delete existing PM2 process
+        run: pm2 delete nestjs-app || true
 
-      - name: Start new PM2 process with name
+      - name: Start PM2 with new build
         run: pm2 start dist/main.js --name nestjs-app
+        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
 
       - name: Save PM2 process list
         run: pm2 save

@@ -41,7 +41,7 @@ jobs:
             --exclude='node_modules' \
             --exclude='.git' \
             --exclude='.github' \
-            ${{ github.workspace } \
+            ${{ github.workspace }} \
             /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
 
       - name: Install production dependencies

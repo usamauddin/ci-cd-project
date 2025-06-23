@@ -29,16 +29,16 @@ jobs:
 
       - name: Sync code to custom directory
         run: |
-          rm -rf /home/administrator/nest-cicd-implementation/ci-cd-implementation
-          cp -r ${{ github.workspace }} /home/administrator/nest-cicd-implementation/ci-cd-implementation
+          rm -rf /home/administrator/nest-ci-cd-pipeline/ci-cd-project
+          cp -r ${{ github.workspace }} /home/administrator/nest-ci-cd-pipeline/ci-cd-project
 
       - name: Install dependencies
         run: npm install
-        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
+        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project
 
       - name: Build the project
         run: npm run build
-        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
+        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project
 
       - name: Install PM2 globally
         run: npm install -g pm2
@@ -48,7 +48,7 @@ jobs:
 
       - name: Start PM2 with new build
         run: pm2 start dist/main.js --name nestjs-app
-        working-directory: /home/administrator/nest-cicd-implementation/ci-cd-implementation
+        working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project
 
       - name: Save PM2 process list
         run: pm2 save

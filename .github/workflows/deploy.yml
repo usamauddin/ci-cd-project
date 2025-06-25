@@ -13,39 +13,41 @@ jobs:
         node-version: [20.x]
 
     steps:
-      # Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Set up Node.js
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
-      # Install and build
       - name: Install & Build in Workspace
         run: |
           npm ci
           npm run build
         working-directory: ${{ github.workspace }}
 
-      # Stop existing PM2 process (if running)
       - name: Stop existing PM2 process
         run: pm2 delete nestjs-app || true
 
-      # Pull latest code in deployment folder
-      - name: Pull latest code in deployment folder
+      - name: Sync production artifacts with rsync
         run: |
-          cd /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
-          git pull origin main
+          mkdir -p /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
 
-      # Install production dependencies
+          rsync -av --delete \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            --exclude='.github' \
+            "${{ github.workspace }}/" \
+            /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
+
+      - name: Clean up workspace to free space
+        run: rm -rf ${{ github.workspace }}
+
       - name: Install production dependencies
         run: npm ci --production
         working-directory: /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
 
-      # Start PM2 process
       - name: Start PM2 process
         run: |
           pm2 start dist/main.js --name nestjs-app

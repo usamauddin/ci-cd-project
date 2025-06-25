@@ -41,10 +41,19 @@ jobs:
             "${{ github.workspace }}/" \
             /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
 
-      - name: Clean up workspace to free space
+      - name: Clean up heavy folders from workspace
         run: |
-          cd /
-          rm -rf ${{ github.workspace }}
+          echo "Before cleanup:"
+          du -sh ${{ github.workspace }}
+
+          # Delete large folders
+          rm -rf ${{ github.workspace }}/node_modules
+          rm -rf ${{ github.workspace }}/dist
+          rm -rf ${{ github.workspace }}/.git
+          rm -rf ${{ github.workspace }}/.github
+
+          echo "After cleanup:"
+          du -sh ${{ github.workspace }}
 
       - name: Install production dependencies
         run: npm ci --production

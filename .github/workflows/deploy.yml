@@ -13,23 +13,29 @@ jobs:
         node-version: [20.x]
 
     steps:
+      # This line is part of a GitHub Actions workflow. It tells GitHub Actions to check out (i.e., clone) the repository where the workflow is running.
       - name: Checkout repository
         uses: actions/checkout@v3
 
+        # This step sets up Node.js on the GitHub Actions runner so that your project can run Node-based commands like npm install, npm run build, etc.
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
+        # This step installs dependencies and builds your Node.js application inside the GitHub Actions runner.
       - name: Install & Build in Workspace
         run: |
           npm ci
           npm run build
         working-directory: ${{ github.workspace }}
 
+        # This step attempts to stop and delete an existing PM2 process named nestjs-app.
       - name: Stop existing PM2 process
         run: pm2 delete nestjs-app || true
 
+      # rsync (short for remote sync) is a fast, powerful file copying and synchronization tool used in Unix/Linux systems. It is mainly used to sync files locally or remotely (over SSH) between machines or directories.
+      # This step uses rsync to sync your built project files from the GitHub Actions runner to a project directory
       - name: Sync production artifacts with rsync
         run: |
           mkdir -p /home/administrator/nest-ci-cd-pipeline/ci-cd-project/
